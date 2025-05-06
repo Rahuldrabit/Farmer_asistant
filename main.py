@@ -15,6 +15,7 @@ import uvicorn
 import traceback
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from services.translation_service import TranslationService
 
 app = FastAPI(
     title="Plant Care Assistant API",
@@ -38,6 +39,9 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 disease_agent = DiseaseAgent()
 planting_agent = PlantingAgent()
 weather_agent = WeatherAgent()
+
+# Initialize translation service
+translation_service = TranslationService()
 
 @app.get("/")
 async def root():
@@ -68,19 +72,39 @@ async def root():
         "documentation": "Visit /docs for interactive API documentation"
     }
 
+@app.post("/translate", description="Translate text to Bangla")
+async def translate_text(request: dict):
+    """Translate text from English to Bangla"""
+    try:
+        if "text" not in request:
+            raise HTTPException(status_code=400, detail="Text field is required")
+            
+        translated_text = await translation_service.translate_to_bangla(request["text"])
+        return {"translated_text": translated_text}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Translation error: {str(e)}")
+
 @app.post("/disease/diagnose", response_model=DiseaseResponse)
-async def diagnose_disease(request: DiseaseRequest):
+async def diagnose_disease(request: DiseaseRequest, translate: bool = False):
     """
     Diagnose plant diseases based on symptoms and provide treatment recommendations
     """
     try:
-        return await disease_agent.diagnose(request)
+        result = await disease_agent.diagnose(request)
+        if translate:
+            # Create a dictionary representation and translate all fields
+            result_dict = result.dict()
+            translated_dict = await translation_service.translate_dict_to_bangla(result_dict)
+            # Convert back to DiseaseResponse
+            return DiseaseResponse(**translated_dict)
+        return result
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error diagnosing disease: {str(e)}")
 
 @app.post("/disease/image", response_model=DiseaseResponse)
-async def diagnose_disease_from_image(image: UploadFile = File(...)):
+async def diagnose_disease_from_image(image: UploadFile = File(...), translate: bool = False):
     """
     Diagnose plant diseases by uploading an image of the affected plant
     """
@@ -90,7 +114,14 @@ async def diagnose_disease_from_image(image: UploadFile = File(...)):
         
         # Process the image through disease_agent
         try:
-            return await disease_agent.diagnose_from_image(image_data)
+            result = await disease_agent.diagnose_from_image(image_data)
+            if translate:
+                # Create a dictionary representation and translate all fields
+                result_dict = result.dict()
+                translated_dict = await translation_service.translate_dict_to_bangla(result_dict)
+                # Convert back to DiseaseResponse
+                return DiseaseResponse(**translated_dict)
+            return result
         except Exception as e:
             print(f"Error in disease_agent.diagnose_from_image: {str(e)}")
             traceback.print_exc()
@@ -112,12 +143,19 @@ async def diagnose_disease_from_image_get():
     }
 
 @app.post("/planting/plan", response_model=PlantingPlanResponse)
-async def create_planting_plan(request: PlantingPlanRequest):
+async def create_planting_plan(request: PlantingPlanRequest, translate: bool = False):
     """
     Create a seasonal planting plan based on location, weather, and preferences
     """
     try:
-        return await planting_agent.create_planting_plan(request)
+        result = await planting_agent.create_planting_plan(request)
+        if translate:
+            # Create a dictionary representation and translate all fields
+            result_dict = result.dict()
+            translated_dict = await translation_service.translate_dict_to_bangla(result_dict)
+            # Convert back to PlantingPlanResponse
+            return PlantingPlanResponse(**translated_dict)
+        return result
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error creating planting plan: {str(e)}")
@@ -138,12 +176,19 @@ async def create_planting_plan_get():
     }
 
 @app.post("/weather/forecast", response_model=WeatherForecastResponse)
-async def get_weather_forecast(request: WeatherForecastRequest):
+async def get_weather_forecast(request: WeatherForecastRequest, translate: bool = False):
     """
     Get weather forecast with agricultural interpretation
     """
     try:
-        return await weather_agent.get_forecast_with_interpretation(request)
+        result = await weather_agent.get_forecast_with_interpretation(request)
+        if translate:
+            # Create a dictionary representation and translate all fields
+            result_dict = result.dict()
+            translated_dict = await translation_service.translate_dict_to_bangla(result_dict)
+            # Convert back to WeatherForecastResponse
+            return WeatherForecastResponse(**translated_dict)
+        return result
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error getting weather forecast: {str(e)}")
@@ -166,6 +211,17 @@ async def get_weather_forecast_get():
 async def serve_frontend():
     """Serve the frontend application"""
     return FileResponse("static/index.html")
+
+# Add a new endpoint to get UI translations
+@app.get("/ui-translations")
+async def get_ui_translations():
+    """Get UI translations for frontend"""
+    try:
+        translations = await translation_service.get_ui_translations()
+        return translations
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error getting translations: {str(e)}")
 
 if __name__ == "__main__":
     # Change from 0.0.0.0 to localhost or 127.0.0.1 for better browser compatibility

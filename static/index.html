@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Care Assistant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #2e7d32 !important;
+        }
+        .section-card {
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .section-card:hover {
+            transform: translateY(-5px);
+        }
+        .card-header {
+            background-color: #43a047;
+            color: white;
+            border-top-left-radius: 15px !important;
+            border-top-right-radius: 15px !important;
+        }
+        .btn-primary {
+            background-color: #2e7d32;
+            border-color: #2e7d32;
+        }
+        .btn-primary:hover {
+            background-color: #1b5e20;
+            border-color: #1b5e20;
+        }
+        .result-box {
+            background-color: #f1f8e9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 4px solid #43a047;
+        }
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 10px;
+            border-radius: 8px;
+        }
+        footer {
+            background-color: #2e7d32;
+            color: white;
+        }
+        #loadingSpinner {
+            display: none;
+        }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #2e7d32;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">🌱 Plant Care Assistant</a>
+        </div>
+    </nav>
+
+    <div class="container mb-5">
+        <!-- Introduction -->
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">Welcome to Plant Care Assistant!</h4>
+                    <p>Get expert advice on plant diseases, seasonal planting plans, and weather forecasts for your garden.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Disease Diagnosis Section -->
+            <div class="col-lg-6">
+                <div class="card section-card">
+                    <div class="card-header">
+                        <h5>Plant Disease Diagnosis</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Tabs for text vs image -->
+                        <ul class="nav nav-tabs mb-3" id="diagnosisTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-diagnosis" type="button">Text Description</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="image-tab" data-bs-toggle="tab" data-bs-target="#image-diagnosis" type="button">Image Upload</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="diagnosisTabContent">
+                            <!-- Text-based Diagnosis -->
+                            <div class="tab-pane fade show active" id="text-diagnosis" role="tabpanel" aria-labelledby="text-tab">
+                                <form id="diseaseTextForm">
+                                    <div class="mb-3">
+                                        <label for="plantName" class="form-label">Plant Name</label>
+                                        <input type="text" class="form-control" id="plantName" placeholder="e.g., Tomato, Rose">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="diseaseDescription" class="form-label">Symptoms Description</label>
+                                        <textarea class="form-control" id="diseaseDescription" rows="3" placeholder="Describe the symptoms you observe..."></textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="additionalInfo" class="form-label">Additional Information (optional)</label>
+                                        <textarea class="form-control" id="additionalInfo" rows="2" placeholder="Any additional context..."></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Get Diagnosis</button>
+                                </form>
+                            </div>
+                            
+                            <!-- Image-based Diagnosis -->
+                            <div class="tab-pane fade" id="image-diagnosis" role="tabpanel" aria-labelledby="image-tab">
+                                <form id="diseaseImageForm">
+                                    <div class="mb-3">
+                                        <label for="plantImage" class="form-label">Upload Plant Image</label>
+                                        <input class="form-control" type="file" id="plantImage" accept="image/*">
+                                        <div class="mt-2">
+                                            <img id="imagePreview" class="image-preview d-none">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Analyze Image</button>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Results area -->
+                        <div id="diseaseResult" class="result-box mt-3 d-none">
+                            <h5 class="mb-3">Diagnosis Results</h5>
+                            <div id="diseaseResultContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Planting Plan Section -->
+            <div class="col-lg-6">
+                <div class="card section-card">
+                    <div class="card-header">
+                        <h5>Seasonal Planting Plan</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="plantingPlanForm">
+                            <div class="mb-3">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" placeholder="e.g., New York, London">
+                            </div>
+                            <div class="mb-3">
+                                <label for="season" class="form-label">Season (optional)</label>
+                                <select class="form-select" id="season">
+                                    <option value="">Current Season</option>
+                                    <option value="Spring">Spring</option>
+                                    <option value="Summer">Summer</option>
+                                    <option value="Fall">Fall</option>
+                                    <option value="Winter">Winter</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="gardenSize" class="form-label">Garden Size (optional)</label>
+                                <select class="form-select" id="gardenSize">
+                                    <option value="">Not specified</option>
+                                    <option value="Small">Small</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Large">Large</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="plantTypes" class="form-label">Plant Types (optional)</label>
+                                <input type="text" class="form-control" id="plantTypes" placeholder="e.g., vegetables, flowers, herbs (comma separated)">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Get Planting Plan</button>
+                        </form>
+                        
+                        <!-- Results area -->
+                        <div id="plantingResult" class="result-box mt-3 d-none">
+                            <h5 class="mb-3">Planting Plan</h5>
+                            <div id="plantingResultContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weather Section -->
+            <div class="col-lg-12 mt-4">
+                <div class="card section-card">
+                    <div class="card-header">
+                        <h5>Weather Forecast for Agriculture</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="weatherForm" class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="weatherLocation" class="form-label">Location</label>
+                                    <input type="text" class="form-control" id="weatherLocation" placeholder="e.g., New York, London">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="forecastDays" class="form-label">Days to Forecast</label>
+                                    <select class="form-select" id="forecastDays">
+                                        <option value="3">3 Days</option>
+                                        <option value="5">5 Days</option>
+                                        <option value="7" selected>7 Days</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">Get Weather Forecast</button>
+                            </div>
+                        </form>
+                        
+                        <!-- Results area -->
+                        <div id="weatherResult" class="result-box mt-3 d-none">
+                            <h5 class="mb-3">Weather Forecast</h5>
+                            <div id="weatherResultContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Spinner -->
+        <div id="loadingSpinner" class="text-center my-4">
+            <div class="loader"></div>
+            <p>Processing your request...</p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-3 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">© 2023 Plant Care Assistant</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // API base URL - adjust this to your server address
+        const API_URL = 'http://localhost:8000';
+        
+        // Image preview functionality
+        document.getElementById('plantImage').addEventListener('change', function(e) {
+            const imagePreview = document.getElementById('imagePreview');
+            if (e.target.files && e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('d-none');
+                };
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        // Show loading spinner
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'block';
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        // Format disease diagnosis results
+        function formatDiseaseResult(data) {
+            let html = `<p><strong>Plant:</strong> ${data.plant_name}</p>`;
+            
+            html += '<p><strong>Possible Diseases:</strong></p><ul>';
+            data.possible_diseases.forEach(disease => {
+                html += `<li>${disease}</li>`;
+            });
+            html += '</ul>';
+            
+            html += '<p><strong>Recommendations:</strong></p><ul>';
+            data.recommendations.forEach(rec => {
+                html += `<li>${rec}</li>`;
+            });
+            html += '</ul>';
+            
+            html += '<p><strong>Preventive Measures:</strong></p><ul>';
+            data.preventive_measures.forEach(measure => {
+                html += `<li>${measure}</li>`;
+            });
+            html += '</ul>';
+            
+            if (data.organic_solutions && data.organic_solutions.length > 0) {
+                html += '<p><strong>Organic Solutions:</strong></p><ul>';
+                data.organic_solutions.forEach(solution => {
+                    html += `<li>${solution}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            if (data.chemical_solutions && data.chemical_solutions.length > 0) {
+                html += '<p><strong>Chemical Solutions:</strong></p><ul>';
+                data.chemical_solutions.forEach(solution => {
+                    html += `<li>${solution}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            return html;
+        }
+
+        // Format planting plan results
+        function formatPlantingResult(data) {
+            let html = `<p><strong>Location:</strong> ${data.location}</p>`;
+            html += `<p><strong>Season:</strong> ${data.season}</p>`;
+            
+            html += '<p><strong>Recommended Plants:</strong></p>';
+            
+            if (data.recommendations && data.recommendations.length > 0) {
+                html += '<div class="accordion" id="plantingAccordion">';
+                
+                data.recommendations.forEach((plant, index) => {
+                    html += `
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button ${index > 0 ? 'collapsed' : ''}" type="button" data-bs-toggle="collapse" 
+                                    data-bs-target="#collapse${index}" aria-expanded="${index === 0}" aria-controls="collapse${index}">
+                                    ${plant.plant_name}
+                                </button>
+                            </h2>
+                            <div id="collapse${index}" class="accordion-collapse collapse ${index === 0 ? 'show' : ''}" 
+                                data-bs-parent="#plantingAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Planting Time:</strong> ${plant.suitable_time}</p>
+                                    <p><strong>Growing Conditions:</strong> ${plant.growing_conditions}</p>
+                                    <p><strong>Care Instructions:</strong> ${plant.care_instructions}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            } else {
+                html += '<p>No specific plant recommendations available.</p>';
+            }
+            
+            html += `<div class="mt-3"><strong>General Advice:</strong><p>${data.general_advice}</p></div>`;
+            
+            return html;
+        }
+
+        // Format weather forecast results
+        function formatWeatherResult(data) {
+            let html = `<p><strong>Location:</strong> ${data.location}</p>`;
+            
+            if (data.forecasts && data.forecasts.length > 0) {
+                html += '<div class="table-responsive"><table class="table table-striped">';
+                html += '<thead><tr><th>Date</th><th>Temp High</th><th>Temp Low</th><th>Precipitation</th><th>Description</th></tr></thead><tbody>';
+                
+                data.forecasts.forEach(day => {
+                    html += `<tr>
+                        <td>${day.date}</td>
+                        <td>${day.temperature_high}°C</td>
+                        <td>${day.temperature_low}°C</td>
+                        <td>${(day.precipitation_chance * 100).toFixed(0)}%</td>
+                        <td>${day.description}</td>
+                    </tr>`;
+                });
+                
+                html += '</tbody></table></div>';
+            } else {
+                html += '<p>No forecast data available.</p>';
+            }
+            
+            html += `<div class="mt-3"><strong>Planting Advice:</strong><p>${data.planting_advice}</p></div>`;
+            
+            return html;
+        }
+
+        // Handle text-based disease diagnosis form
+        document.getElementById('diseaseTextForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+            
+            const diseaseData = {
+                plant_name: document.getElementById('plantName').value,
+                disease_description: document.getElementById('diseaseDescription').value,
+                additional_info: document.getElementById('additionalInfo').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/disease/diagnose`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(diseaseData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('diseaseResultContent').innerHTML = formatDiseaseResult(data);
+                    document.getElementById('diseaseResult').classList.remove('d-none');
+                } else {
+                    alert(`Error: ${data.detail || 'Could not process your request'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Handle image-based disease diagnosis form
+        document.getElementById('diseaseImageForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+            
+            const fileInput = document.getElementById('plantImage');
+            if (!fileInput.files || !fileInput.files[0]) {
+                alert('Please select an image to upload');
+                hideLoading();
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            
+            try {
+                const response = await fetch(`${API_URL}/disease/image`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('diseaseResultContent').innerHTML = formatDiseaseResult(data);
+                    document.getElementById('diseaseResult').classList.remove('d-none');
+                } else {
+                    alert(`Error: ${data.detail || 'Could not process your request'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Handle planting plan form
+        document.getElementById('plantingPlanForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+            
+            const plantTypes = document.getElementById('plantTypes').value.split(',')
+                .map(type => type.trim())
+                .filter(type => type !== '');
+            
+            const plantingData = {
+                location: document.getElementById('location').value,
+                season: document.getElementById('season').value || undefined,
+                garden_size: document.getElementById('gardenSize').value || undefined,
+                plant_types: plantTypes.length > 0 ? plantTypes : undefined
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/planting/plan`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(plantingData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('plantingResultContent').innerHTML = formatPlantingResult(data);
+                    document.getElementById('plantingResult').classList.remove('d-none');
+                } else {
+                    alert(`Error: ${data.detail || 'Could not process your request'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Handle weather forecast form
+        document.getElementById('weatherForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showLoading();
+            
+            const weatherData = {
+                location: document.getElementById('weatherLocation').value,
+                days: parseInt(document.getElementById('forecastDays').value)
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/weather/forecast`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(weatherData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('weatherResultContent').innerHTML = formatWeatherResult(data);
+                    document.getElementById('weatherResult').classList.remove('d-none');
+                } else {
+                    alert(`Error: ${data.detail || 'Could not process your request'}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request');
+            } finally {
+                hideLoading();
+            }
+        });
+    </script>
+</body>
+</html>

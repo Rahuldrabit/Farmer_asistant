@@ -25,23 +25,28 @@ class TranslationService:
         """
         if not text:
             return ""
+        
+        # Skip translation for very short texts or numbers
+        if len(text) < 3 or (text.replace('.', '').isdigit()):
+            return text
             
         prompt = f"""
-        Translate the following English text to Bangla (Bengali):
+        Translate the following English text to Bangla (Bengali).
+        The text might be related to plants, agriculture, diseases, or weather:
         
         ```
         {text}
         ```
         
-        Please provide only the translated text without any additional explanations or notes.
-        Maintain all formatting like bullet points and paragraphs in the translation.
+        Provide ONLY the translated Bangla text without any notes or explanations.
+        Maintain all formatting (lists, paragraphs, etc.).
         """
         
         system_instruction = """
-        আপনি একজন পেশাদার ইংরেজি থেকে বাংলা অনুবাদক। 
-        প্রদত্ত পাঠ্যকে স্বাভাবিক-শব্দযুক্ত বাংলায় সঠিকভাবে অনুবাদ করুন। 
-        অনুবাদে কৃষি ও উদ্ভিদ বিজ্ঞানের পরিভাষা সঠিকভাবে ব্যবহার করুন।
-        শুধু অনুবাদ প্রদান করুন, কোনো ব্যাখ্যা বা নোট ছাড়া।
+        আপনি একজন পেশাদার অনুবাদক যিনি কৃষি, উদ্ভিদ, রোগ এবং আবহাওয়া সম্পর্কিত পরিভাষা সম্পর্কে বিশেষজ্ঞ।
+        আপনার কাজ হল সঠিকভাবে ইংরেজি থেকে বাংলায় অনুবাদ করা।
+        অনুগ্রহ করে শুধুমাত্র অনুবাদ প্রদান করুন, কোন ব্যাখ্যা বা অতিরিক্ত নোট নয়।
+        যদি কোন পারিভাষিক শব্দ থাকে, তবে উপযুক্ত বাংলা পরিভাষা ব্যবহার করুন।
         """
         
         try:
@@ -65,30 +70,22 @@ class TranslationService:
             dict/list: With all string values translated to Bangla
         """
         if isinstance(data, str):
-            if len(data) > 500:
-                # Split long strings into chunks for better translation quality
-                chunks = [data[i:i+500] for i in range(0, len(data), 500)]
-                translated_chunks = []
-                for chunk in chunks:
-                    translated_chunks.append(await self.translate_to_bangla(chunk))
-                return "".join(translated_chunks)
-            else:
-                return await self.translate_to_bangla(data)
+            # Enhanced debugging to track translation issues
+            print(f"Translating string: {data[:50]}...")
+            translated = await self.translate_to_bangla(data)
+            print(f"Translation result: {translated[:50]}...")
+            return translated
         elif isinstance(data, list):
-            # Translate lists in parallel for efficiency
-            tasks = []
+            # Translate each item in the list separately for better control
+            results = []
             for item in data:
-                tasks.append(self.translate_dict_to_bangla(item))
-            return await asyncio.gather(*tasks)
+                results.append(await self.translate_dict_to_bangla(item))
+            return results
         elif isinstance(data, dict):
-            # Process dictionaries - translate each value
+            # Process dictionaries - translate each value separately
             result = {}
-            # Use asyncio.gather for parallel processing
-            keys = list(data.keys())
-            tasks = [self.translate_dict_to_bangla(data[key]) for key in keys]
-            values = await asyncio.gather(*tasks)
-            for i, key in enumerate(keys):
-                result[key] = values[i]
+            for key, value in data.items():
+                result[key] = await self.translate_dict_to_bangla(value)
             return result
         else:
             # Return non-string/dict/list values as is

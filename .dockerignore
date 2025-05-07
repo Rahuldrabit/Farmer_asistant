@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+hackaton_env/
+.git
+.gitignore
+.idea
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+.DS_Store

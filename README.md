@@ -174,6 +174,36 @@ f:/Brac_Hackaton/
     └── api_utils.py
 ```
 
+## Docker Deployment
+
+### Using Docker Compose (Recommended)
+
+1. Make sure Docker and Docker Compose are installed on your system
+2. Create a `.env` file with your API keys (see Setup section above)
+3. Build and start the container:
+   ```
+   docker-compose up -d
+   ```
+4. Access the application at http://localhost:8000/app
+
+### Using Docker Directly
+
+1. Build the Docker image:
+   ```
+   docker build -t plant-care-assistant .
+   ```
+
+2. Run the container:
+   ```
+   docker run -p 8000:8000 \
+     -e GEMINI_API_KEY=your_gemini_api_key \
+     -e WEATHER_API_KEY=your_weather_api_key \
+     -e GEMINI_MODEL=gemini-2.0-flash \
+     plant-care-assistant
+   ```
+
+3. Access the application at http://localhost:8000/app
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

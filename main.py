@@ -224,7 +224,7 @@ async def get_ui_translations():
         raise HTTPException(status_code=500, detail=f"Error getting translations: {str(e)}")
 
 if __name__ == "__main__":
-    # Change from 0.0.0.0 to localhost or 127.0.0.1 for better browser compatibility
+    # Change host to 0.0.0.0 to allow connections from outside the container
     print("Starting server. Access the API at: http://localhost:8000")
     print("API documentation available at: http://localhost:8000/docs")
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

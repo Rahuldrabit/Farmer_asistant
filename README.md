@@ -84,7 +84,10 @@ A comprehensive agricultural assistant system that provides plant disease diagno
 1. Start the server:
    ```
    python main.py
+   or
+   python run_app.py
    ```
+
 
 2. Access the application:
    - Web interface: http://localhost:8000/app

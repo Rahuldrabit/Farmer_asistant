@@ -204,6 +204,9 @@ f:/Brac_Hackaton/
 
 3. Access the application at http://localhost:8000/app
 
+## Video Link
+https://youtu.be/oshuWeRRUg8
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
